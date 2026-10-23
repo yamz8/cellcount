@@ -18,8 +18,12 @@ the keyboard, following the desktop theme and language.
   pixels per µm.
 - A hemocytometer helper: enter the dilution factor and the number of large
   squares counted to get cells/mL (total ÷ squares × dilution × 10⁴).
-- Auto-suggest finds candidates by thresholding plus connected-component blob
-  detection. You accept or reject each one, and nothing is counted until you do.
+- Auto-suggest finds round spots that stand out from their own surroundings, at
+  every size between the smallest and largest cell. It copes with uneven
+  lighting, the grid of a hemocytometer, the rim of a plate, dim cells beside
+  bright ones, and touching cells. It can look for darker or brighter cells:
+  for trypan blue, suggest the brighter (live) cells, then the darker (dead)
+  ones. You accept or reject each one, and nothing is counted until you do.
 - The session saves as `<image>.cellcount` JSON next to the image, written
   atomically. Export writes a markers CSV (x, y, class), a summary CSV, and an
   annotated PNG drawn by the same painter as the screen.

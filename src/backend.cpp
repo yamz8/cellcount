@@ -47,6 +47,7 @@ Backend::Backend(Theme *theme, FilePicker *filePicker, QObject *parent)
         m_rejected.clear();
         if (m_autoThreshold)
             m_threshold = result.threshold;
+        m_foundDark = result.dark;
         refilterSuggestions();
     });
     m_session = m_saved = Session::withDefaults({tr("Live"), tr("Dead"), tr("Colony")});
@@ -577,6 +578,15 @@ void Backend::setThreshold(int value) {
         m_detectDelay.start();
 }
 
+void Backend::setObjects(const QString &objects) {
+    if ((objects != "auto" && objects != "dark" && objects != "light") || objects == m_objects)
+        return;
+    m_objects = objects;
+    emit suggestionsChanged();
+    if (m_autoSuggest)
+        detect();
+}
+
 void Backend::setMinArea(int value) {
     value = std::max(1, value);
     if (value == m_minArea)
@@ -596,6 +606,9 @@ void Backend::detect() {
     DetectOptions options;
     options.threshold = m_autoThreshold ? -1 : m_threshold;
     options.minArea = m_minArea;
+    options.polarity = m_objects == "dark" ? DetectOptions::Dark
+                     : m_objects == "light" ? DetectOptions::Light
+                                            : DetectOptions::Auto;
     // Anything bigger than a twentieth of the image is a smear or the
     // background, not one cell or colony.
     options.maxArea = int(qint64(m_image.width()) * m_image.height() / 20);

@@ -72,9 +72,7 @@
   "Total ÷ squares × dilution × 10,000 (a large Neubauer square holds 0.1 µL).": "Gesamt ÷ Quadrate × Verdünnung × 10.000 (ein Neubauer-Großquadrat fasst 0,1 µL).",
   "Auto-suggest": "Automatische Vorschläge",
   "Suggest cells (Space)": "Zellen vorschlagen (Leertaste)",
-  "Threshold %1": "Schwellenwert %1",
   "Automatic": "Automatisch",
-  "Smallest blob (px)": "Kleinster Fleck (px)",
   "%n suggestions": {
     "one": "%n Vorschlag",
     "other": "%n Vorschläge"
@@ -118,5 +116,11 @@
   "The file chooser failed: %1": "Der Dateiauswahldialog ist fehlgeschlagen: %1",
   "Exporting would overwrite the original image, so nothing was written.": "Der Export hätte das Originalbild überschrieben, daher wurde nichts geschrieben.",
   "%1 beside this image can't be read, so it was left as it is: %2. Fix it, or move it aside to start counting afresh.": "%1 neben diesem Bild ist nicht lesbar und wurde nicht verändert: %2. Korrigiere die Datei oder verschiebe sie, um neu zu zählen.",
-  "%1 belongs to %2, not this image, so it was left as it is. Move it aside to count this image.": "%1 gehört zu %2, nicht zu diesem Bild, und wurde nicht verändert. Verschiebe die Datei, um dieses Bild zu zählen."
+  "%1 belongs to %2, not this image, so it was left as it is. Move it aside to count this image.": "%1 gehört zu %2, nicht zu diesem Bild, und wurde nicht verändert. Verschiebe die Datei, um dieses Bild zu zählen.",
+  "Darker": "Dunkler",
+  "Brighter": "Heller",
+  "Finding cells darker than the background": "Sucht Zellen, die dunkler als der Hintergrund sind",
+  "Finding cells brighter than the background": "Sucht Zellen, die heller als der Hintergrund sind",
+  "Least contrast %1": "Mindestkontrast %1",
+  "Smallest cell (px²)": "Kleinste Zelle (px²)"
 }

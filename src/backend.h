@@ -43,6 +43,8 @@ class Backend : public QObject {
     Q_PROPERTY(bool autoThreshold READ autoThreshold WRITE setAutoThreshold NOTIFY suggestionsChanged)
     Q_PROPERTY(int threshold READ threshold WRITE setThreshold NOTIFY suggestionsChanged)
     Q_PROPERTY(int minArea READ minArea WRITE setMinArea NOTIFY suggestionsChanged)
+    Q_PROPERTY(QString objects READ objects WRITE setObjects NOTIFY suggestionsChanged)
+    Q_PROPERTY(bool foundDark READ foundDark NOTIFY suggestionsChanged)
     Q_PROPERTY(int suggestionCount READ suggestionCount NOTIFY suggestionsChanged)
     Q_PROPERTY(bool detecting READ detecting NOTIFY suggestionsChanged)
     Q_PROPERTY(QString error READ error NOTIFY messageChanged)
@@ -86,6 +88,11 @@ public:
     int threshold() const { return m_threshold; }
     void setThreshold(int value);
     int minArea() const { return m_minArea; }
+    // Which objects to suggest: "auto", "dark" or "light".
+    QString objects() const { return m_objects; }
+    void setObjects(const QString &objects);
+    // Whether the last suggestions were darker than the background.
+    bool foundDark() const { return m_foundDark; }
     void setMinArea(int value);
     int suggestionCount() const { return m_suggestions.size(); }
     bool detecting() const { return m_watcher.isRunning(); }
@@ -160,6 +167,8 @@ private:
     bool m_autoThreshold = true;
     int m_threshold = 128;
     int m_minArea = 12;
+    QString m_objects = "auto";
+    bool m_foundDark = true;
     int m_detectGeneration = 0;
     QFutureWatcher<DetectResult> m_watcher;
     QTimer m_detectDelay;

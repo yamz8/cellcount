@@ -26,9 +26,12 @@ failure, and writes errors to stderr.
   the total, viability (Live / (Live + Dead)), the area in px² and µm² when a
   scale is set, and cells/mL when squares are set.
 - `cellcount detect <image> --json [--threshold N] [--min-area px] [--max-area px] [--polarity auto|dark|light]`
-  prints candidate points from threshold and blob detection. These are only
-  suggestions: touching cells merge into one blob and debris shows up as
-  blobs, so say so when reporting them, and never present them as a count.
+  prints candidate points: round spots that stand out from their surroundings,
+  each with an `area` in pixels and a `contrast` in gray levels.
+  `--polarity dark` finds darker cells, `light` brighter ones; trypan-blue live
+  cells are `light` and dead ones `dark`. Raise `--min-area` to the size of the
+  cells to drop debris. These are only suggestions, so say so when reporting
+  them, and never present them as a count.
 - `cellcount export <session> --csv markers.csv --summary-csv summary.csv --png annotated.png --json`
   writes any of the three. The original image is never modified.
 

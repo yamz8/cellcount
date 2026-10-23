@@ -332,9 +332,41 @@ Rectangle {
                 Layout.fillWidth: true
                 visible: backend.autoSuggest
                 spacing: 2
+                // Trypan blue shows both kinds at once: clear live cells and
+                // dark dead ones, so each can be suggested in turn.
                 RowLayout {
                     Layout.fillWidth: true
-                    Label { text: qsTr("Threshold %1").arg(backend.threshold) }
+                    spacing: 4
+                    ButtonGroup { id: objectKinds }
+                    Repeater {
+                        model: [["auto", qsTr("Automatic")], ["dark", qsTr("Darker")], ["light", qsTr("Brighter")]]
+                        // Equal shares of the row, however long the words.
+                        delegate: ActionButton {
+                            required property var modelData
+                            Layout.fillWidth: true
+                            Layout.preferredWidth: 1
+                            leftPadding: 6
+                            rightPadding: 6
+                            text: modelData[1]
+                            checkable: true
+                            checked: backend.objects === modelData[0]
+                            ButtonGroup.group: objectKinds
+                            onClicked: backend.objects = modelData[0]
+                        }
+                    }
+                }
+                Label {
+                    Layout.fillWidth: true
+                    visible: backend.objects === "auto" && !backend.detecting
+                    text: backend.foundDark ? qsTr("Finding cells darker than the background")
+                                            : qsTr("Finding cells brighter than the background")
+                    wrapMode: Text.Wrap
+                    opacity: 0.5
+                    font.pixelSize: 11
+                }
+                RowLayout {
+                    Layout.fillWidth: true
+                    Label { text: qsTr("Least contrast %1").arg(backend.threshold) }
                     Item { Layout.fillWidth: true }
                     CheckBox {
                         text: qsTr("Automatic")
@@ -345,8 +377,8 @@ Rectangle {
                 }
                 Slider {
                     Layout.fillWidth: true
-                    from: 0
-                    to: 255
+                    from: 1
+                    to: 100
                     stepSize: 1
                     value: backend.threshold
                     focusPolicy: Qt.NoFocus
@@ -354,7 +386,7 @@ Rectangle {
                 }
                 RowLayout {
                     Layout.fillWidth: true
-                    Label { text: qsTr("Smallest blob (px)") }
+                    Label { text: qsTr("Smallest cell (px²)") }
                     Item { Layout.fillWidth: true }
                     SpinBox {
                         Material.roundedScale: theme.radius

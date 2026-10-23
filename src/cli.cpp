@@ -133,11 +133,13 @@ int summary(const QStringList &arguments) {
 }
 
 int detect(const QStringList &arguments) {
-    Command command("detect", "Find candidate cells or colonies by threshold and blob detection. Counts nothing.",
+    Command command("detect", "Find candidate cells or colonies: round spots that stand out from their surroundings. "
+                              "Counts nothing.",
                     "image", "PNG, JPEG or TIFF image");
-    command.parser.addOption({"threshold", "Gray level 0–255 (default: Otsu's method)", "N"});
-    command.parser.addOption({"min-area", "Smallest blob in pixels (default: 12)", "px", "12"});
-    command.parser.addOption({"max-area", "Largest blob in pixels (default: no limit)", "px", "0"});
+    command.parser.addOption({"threshold", "Least contrast with the surroundings, in gray levels 0–255 "
+                                           "(default: from the image's noise)", "N"});
+    command.parser.addOption({"min-area", "Smallest cell in pixels (default: 12)", "px", "12"});
+    command.parser.addOption({"max-area", "Largest cell in pixels (default: a tenth of the short side across)", "px", "0"});
     command.parser.addOption({"polarity", "auto, dark (dark objects) or light (bright objects)", "mode", "auto"});
     command.json();
     command.parser.process(arguments);
@@ -173,7 +175,7 @@ int detect(const QStringList &arguments) {
         QJsonArray list;
         for (const auto &blob : result.blobs)
             list << QJsonObject{{"x", std::round(blob.x * 100) / 100}, {"y", std::round(blob.y * 100) / 100},
-                                {"area", blob.area}};
+                                {"area", blob.area}, {"contrast", std::round(blob.contrast * 10) / 10}};
         print({{"image", QFileInfo(command.argument(1)).absoluteFilePath()},
                {"width", image.width()},
                {"height", image.height()},

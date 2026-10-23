@@ -72,9 +72,7 @@
   "Total ÷ squares × dilution × 10,000 (a large Neubauer square holds 0.1 µL).": "I alt ÷ kvadrater × fortynding × 10.000 (et stort Neubauer-kvadrat rummer 0,1 µL).",
   "Auto-suggest": "Automatiske forslag",
   "Suggest cells (Space)": "Foreslå celler (Mellemrum)",
-  "Threshold %1": "Tærskel %1",
   "Automatic": "Automatisk",
-  "Smallest blob (px)": "Mindste klat (px)",
   "%n suggestions": {
     "one": "%n forslag",
     "other": "%n forslag"
@@ -118,5 +116,11 @@
   "The file chooser failed: %1": "Filvælgeren fejlede: %1",
   "Exporting would overwrite the original image, so nothing was written.": "Eksporten ville overskrive originalbilledet, så intet blev skrevet.",
   "%1 beside this image can't be read, so it was left as it is: %2. Fix it, or move it aside to start counting afresh.": "%1 ved siden af billedet kan ikke læses, så den blev ikke rørt: %2. Ret den, eller flyt den væk for at begynde forfra.",
-  "%1 belongs to %2, not this image, so it was left as it is. Move it aside to count this image.": "%1 hører til %2, ikke dette billede, så den blev ikke rørt. Flyt den væk for at tælle dette billede."
+  "%1 belongs to %2, not this image, so it was left as it is. Move it aside to count this image.": "%1 hører til %2, ikke dette billede, så den blev ikke rørt. Flyt den væk for at tælle dette billede.",
+  "Darker": "Mørkere",
+  "Brighter": "Lysere",
+  "Finding cells darker than the background": "Finder celler, der er mørkere end baggrunden",
+  "Finding cells brighter than the background": "Finder celler, der er lysere end baggrunden",
+  "Least contrast %1": "Mindste kontrast %1",
+  "Smallest cell (px²)": "Mindste celle (px²)"
 }
