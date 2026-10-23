@@ -10,6 +10,6 @@ Keywords[de]=Zelle;Kolonie;zählen;Mikroskop;Zählkammer;Platte;Viabilität;
 Exec=cellcount open %f
 Icon=cellcount
 Terminal=false
-Categories=Science;Biology;Graphics;
+Categories=Science;Biology;
 MimeType=image/png;image/jpeg;image/tiff;
 StartupWMClass=cellcount
