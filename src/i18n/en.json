@@ -1,0 +1,12 @@
+{
+  "%n suggestions": { "one": "%n suggestion", "other": "%n suggestions" },
+  "%n suggestions: click to accept, right-click to reject, A accepts all": {
+    "one": "%n suggestion: click to accept, right-click to reject, A accepts all",
+    "other": "%n suggestions: click to accept, right-click to reject, A accepts all"
+  },
+  "Accepted %n suggestions": { "one": "Accepted %n suggestion", "other": "Accepted %n suggestions" },
+  "%n markers outside the region aren't counted": {
+    "one": "%n marker outside the region isn't counted",
+    "other": "%n markers outside the region aren't counted"
+  }
+}

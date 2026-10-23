@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=Application
+Name=Cellcount
+Comment=Count cells or colonies on microscope and plate images
+Comment[da]=Tæl celler eller kolonier på mikroskop- og pladebilleder
+Comment[de]=Zellen oder Kolonien auf Mikroskop- und Plattenbildern zählen
+Keywords=cell;colony;count;microscope;hemocytometer;plate;viability;
+Keywords[da]=celle;koloni;tælle;mikroskop;hæmocytometer;plade;levedygtighed;
+Keywords[de]=Zelle;Kolonie;zählen;Mikroskop;Zählkammer;Platte;Viabilität;
+Exec=cellcount open %f
+Icon=cellcount
+Terminal=false
+Categories=Science;Biology;Graphics;
+MimeType=image/png;image/jpeg;image/tiff;
+StartupWMClass=cellcount
