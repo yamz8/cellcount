@@ -38,7 +38,8 @@ You may edit the JSON directly: add markers as `{"x": 10.5, "y": 20, "class": 0}
 rename classes, set `"pixelsPerUm"`, or set `"hemocytometer": {"dilution": 2,
 "squares": 4, "squareVolumeMl": 0.0001}`. A region is
 `{"shape": "rect" | "circle", "x", "y", "width", "height"}` in image pixels; a
-circle's width and height are equal. Run `cellcount check` afterwards.
+circle's width and height are equal. `"imageSize": [width, height]` is optional;
+without it the size is read from the image. Run `cellcount check` afterwards.
 
 ## Working with the person
 

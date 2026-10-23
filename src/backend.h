@@ -134,6 +134,7 @@ signals:
     void changed();
     void suggestionsChanged();
     void messageChanged();
+    void statusReported(const QString &message);
 
 private:
     void remember();

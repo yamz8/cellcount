@@ -322,6 +322,156 @@ private slots:
         QCOMPARE(QSet<QString>(shapes.begin(), shapes.end()).size(), Session::maxClasses);
     }
 
+    void unreadableSessionBesideTheImageIsLeftAlone()
+    {
+        QTemporaryDir dir;
+        const QString image = writeField(dir);
+        const QString sidecar = Session::sessionPathFor(image);
+        // A hand edit gave a marker a class that doesn't exist.
+        write(sidecar, R"({"cellcount": 1, "image": "field.png", "classes": [{"name": "Live", "shape": "circle"}],
+                           "markers": [{"x": 5, "y": 5, "class": 0}, {"x": 9, "y": 9, "class": 5}]})");
+        const QByteArray before = hash(sidecar);
+        Backend backend;
+        QVERIFY(!backend.openPath(image));
+        QVERIFY(backend.error().contains("field.png.cellcount"));
+        QVERIFY(!backend.hasImage());
+        QVERIFY(!backend.save());
+        QCOMPARE(hash(sidecar), before);
+
+        // One that names another image is left alone too.
+        write(sidecar, R"({"cellcount": 1, "image": "other.png", "classes": [{"name": "Live", "shape": "circle"}],
+                           "markers": []})");
+        QVERIFY(!backend.openPath(image));
+        QVERIFY(backend.error().contains("other.png"));
+    }
+
+    void refusedExportWritesNothing()
+    {
+        QTemporaryDir dir;
+        const QString image = writeField(dir);
+        Backend backend;
+        QVERIFY(backend.openPath(image));
+        backend.addMarker(10, 10);
+        // "field.csv" with everything would put the annotated PNG on field.png.
+        QVERIFY(!backend.exportTo(dir.filePath("field.csv"), "all"));
+        QVERIFY(!QFileInfo::exists(dir.filePath("field-markers.csv")));
+        QVERIFY(!QFileInfo::exists(dir.filePath("field-summary.csv")));
+    }
+
+    void singleExportsTakeTheirKindsExtension()
+    {
+        QTemporaryDir dir;
+        Backend backend;
+        QVERIFY(backend.openPath(writeField(dir)));
+        backend.addMarker(10, 10);
+        QVERIFY(backend.exportTo(dir.filePath("counts.csv"), "png"));
+        QVERIFY(!QFileInfo::exists(dir.filePath("counts.csv")));
+        QCOMPARE(QImage(dir.filePath("counts.png")).size(), QSize(320, 240));
+        QVERIFY(backend.exportTo(dir.filePath("table.png"), "markers"));
+        QVERIFY(QFileInfo::exists(dir.filePath("table.csv")));
+        QVERIFY(!QFileInfo::exists(dir.filePath("table.png")));
+    }
+
+    void removingAnEarlierClassKeepsTheSelection()
+    {
+        QTemporaryDir dir;
+        Backend backend;
+        QVERIFY(backend.openPath(writeField(dir)));
+        backend.addClass(); // "Class 4", now selected
+        backend.setCurrentClass(2); // Colony
+        backend.removeClass(0);
+        QCOMPARE(backend.classes()[backend.currentClass()].toMap().value("name").toString(), QString("Colony"));
+        backend.addMarker(5, 5);
+        QCOMPARE(backend.classes()[backend.currentClass()].toMap().value("count").toInt(), 1);
+        QCOMPARE(backend.classes()[backend.currentClass()].toMap().value("percent").toDouble(), 100.0);
+    }
+
+    void roiAreaIsClippedToTheImage()
+    {
+        Session session = Session::withDefaults({"Live"});
+        session.imageSize = QSize(200, 100);
+        session.roi = Roi{"rect", QRectF(150, 50, 100, 100)};
+        QCOMPARE(session.areaPx(), 2500.0);
+        // A circle centred on the corner keeps a quarter of its area.
+        session.roi = Roi{"circle", QRectF(-50, -50, 100, 100)};
+        QVERIFY(qAbs(session.areaPx() - M_PI * 2500 / 4) < M_PI * 2500 / 4 * 1e-3);
+
+        QTemporaryDir dir;
+        Backend backend;
+        QVERIFY(backend.openPath(writeField(dir)));
+        backend.setRoi("rect", -40, -40, 100, 100);
+        QCOMPARE(backend.session().roi.rect, QRectF(0, 0, 60, 60));
+    }
+
+    void missingImageSizeIsReadFromTheImage()
+    {
+        QTemporaryDir dir;
+        writeField(dir);
+        const QString path = dir.filePath("hand.cellcount");
+        write(path, R"({"cellcount": 1, "image": "field.png", "classes": [{"name": "Live", "shape": "circle"}],
+                        "markers": [{"x": 300, "y": 200, "class": 0}]})");
+        Session session;
+        QList<Problem> problems;
+        QVERIFY(Session::load(path, &session, &problems));
+        QVERIFY(problems.isEmpty());
+        QCOMPARE(session.imageSize, QSize(320, 240));
+        QCOMPARE(session.areaPx(), 320.0 * 240);
+    }
+
+    void turningAutoSuggestOffDropsARunningDetection()
+    {
+        QTemporaryDir dir;
+        const QString path = dir.filePath("big.png");
+        syntheticField(2400, 1800, nullptr).save(path);
+        Backend backend;
+        QVERIFY(backend.openPath(path));
+        backend.setAutoSuggest(true);
+        backend.setAutoSuggest(false);
+        QTest::qWait(1500);
+        QCOMPARE(backend.suggestionCount(), 0);
+
+        // Nor does a run started on one image land on the next.
+        backend.setAutoSuggest(true);
+        QVERIFY(backend.openPath(writeField(dir)));
+        backend.setAutoSuggest(false);
+        QTest::qWait(1500);
+        QCOMPARE(backend.suggestionCount(), 0);
+    }
+
+    void undoDuringADragEndsTheDrag()
+    {
+        QTemporaryDir dir;
+        Backend backend;
+        QVERIFY(backend.openPath(writeField(dir)));
+        backend.addMarker(10, 10);
+        backend.addMarker(100, 100);
+        backend.beginMove(1);
+        backend.moveMarker(1, 150, 150);
+        backend.undo(); // undoes the drag so far
+        QCOMPARE(backend.session().markers[1].x, 100.0);
+        backend.moveMarker(1, 200, 200); // the rest of the drag is ignored
+        backend.endMove();
+        QCOMPARE(backend.session().markers[1].x, 100.0);
+        QCOMPARE(backend.markerCount(), 2);
+        QVERIFY(backend.canRedo());
+        backend.redo();
+        QCOMPARE(backend.session().markers[1].x, 150.0);
+    }
+
+    void statusIsReportedOnce()
+    {
+        QTemporaryDir dir;
+        Backend backend;
+        QVERIFY(backend.openPath(writeField(dir)));
+        QSignalSpy spy(&backend, &Backend::statusReported);
+        backend.addMarker(10, 10);
+        QVERIFY(backend.save());
+        QCOMPARE(spy.count(), 1);
+        QVERIFY(!backend.exportTo(dir.filePath("x.csv"), "nonsense"));
+        backend.clearError();
+        QCOMPARE(spy.count(), 1);
+    }
+
     void themeFallsBack()
     {
         QTemporaryDir dir;

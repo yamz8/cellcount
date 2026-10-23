@@ -75,7 +75,10 @@
   "Threshold %1": "Schwellenwert %1",
   "Automatic": "Automatisch",
   "Smallest blob (px)": "Kleinster Fleck (px)",
-  "%n suggestions": { "one": "%n Vorschlag", "other": "%n Vorschläge" },
+  "%n suggestions": {
+    "one": "%n Vorschlag",
+    "other": "%n Vorschläge"
+  },
   "Accept all (A)": "Alle übernehmen (A)",
   "Save": "Speichern",
   "Export…": "Exportieren…",
@@ -90,10 +93,12 @@
   "Could not save %1: %2": "%1 konnte nicht gespeichert werden: %2",
   "Saved %1": "%1 gespeichert",
   "Unknown export \"%1\".": "Unbekannter Export „%1“.",
-  "Exporting would overwrite the original image, so nothing was written to it.": "Der Export hätte das Originalbild überschrieben, daher wurde nichts geschrieben.",
   "Could not write %1: %2": "%1 konnte nicht geschrieben werden: %2",
   "Exported %1": "%1 exportiert",
-  "Accepted %n suggestions": { "one": "%n Vorschlag übernommen", "other": "%n Vorschläge übernommen" },
+  "Accepted %n suggestions": {
+    "one": "%n Vorschlag übernommen",
+    "other": "%n Vorschläge übernommen"
+  },
   "Class %1": "Klasse %1",
   "Only PNG, JPEG and TIFF images can be counted.": "Nur PNG-, JPEG- und TIFF-Bilder können gezählt werden.",
   "Could not read %1: %2": "%1 konnte nicht gelesen werden: %2",
@@ -110,5 +115,8 @@
   "Export Counts": "Zählung exportieren",
   "The desktop file chooser (xdg-desktop-portal) is not available.": "Der Dateiauswahldialog des Desktops (xdg-desktop-portal) ist nicht verfügbar.",
   "Could not listen for the file chooser response.": "Auf die Antwort des Dateiauswahldialogs konnte nicht gewartet werden.",
-  "The file chooser failed: %1": "Der Dateiauswahldialog ist fehlgeschlagen: %1"
+  "The file chooser failed: %1": "Der Dateiauswahldialog ist fehlgeschlagen: %1",
+  "Exporting would overwrite the original image, so nothing was written.": "Der Export hätte das Originalbild überschrieben, daher wurde nichts geschrieben.",
+  "%1 beside this image can't be read, so it was left as it is: %2. Fix it, or move it aside to start counting afresh.": "%1 neben diesem Bild ist nicht lesbar und wurde nicht verändert: %2. Korrigiere die Datei oder verschiebe sie, um neu zu zählen.",
+  "%1 belongs to %2, not this image, so it was left as it is. Move it aside to count this image.": "%1 gehört zu %2, nicht zu diesem Bild, und wurde nicht verändert. Verschiebe die Datei, um dieses Bild zu zählen."
 }

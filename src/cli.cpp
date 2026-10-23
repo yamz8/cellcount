@@ -80,7 +80,7 @@ int check(const QStringList &arguments) {
             const QImage loaded = loadImage(session.imagePath, &error);
             if (loaded.isNull())
                 problems << Problem{true, error};
-            else if (session.imageSize.isValid() && loaded.size() != session.imageSize)
+            else if (!session.imageSize.isEmpty() && loaded.size() != session.imageSize)
                 problems << Problem{false, QString("The image is %1×%2, but the session was made on %3×%4")
                                                .arg(loaded.width()).arg(loaded.height())
                                                .arg(session.imageSize.width()).arg(session.imageSize.height())};
@@ -227,6 +227,7 @@ int exportSession(const QStringList &arguments) {
         const QImage image = loadImage(session.imagePath, &error);
         if (image.isNull())
             return fail(error);
+        session.imageSize = image.size();
         QByteArray png;
         QBuffer buffer(&png);
         buffer.open(QIODevice::WriteOnly);

@@ -75,7 +75,10 @@
   "Threshold %1": "Tærskel %1",
   "Automatic": "Automatisk",
   "Smallest blob (px)": "Mindste klat (px)",
-  "%n suggestions": { "one": "%n forslag", "other": "%n forslag" },
+  "%n suggestions": {
+    "one": "%n forslag",
+    "other": "%n forslag"
+  },
   "Accept all (A)": "Godkend alle (A)",
   "Save": "Gem",
   "Export…": "Eksportér…",
@@ -90,10 +93,12 @@
   "Could not save %1: %2": "Kunne ikke gemme %1: %2",
   "Saved %1": "Gemte %1",
   "Unknown export \"%1\".": "Ukendt eksport \"%1\".",
-  "Exporting would overwrite the original image, so nothing was written to it.": "Eksporten ville overskrive originalbilledet, så intet blev skrevet til det.",
   "Could not write %1: %2": "Kunne ikke skrive %1: %2",
   "Exported %1": "Eksporterede %1",
-  "Accepted %n suggestions": { "one": "Godkendte %n forslag", "other": "Godkendte %n forslag" },
+  "Accepted %n suggestions": {
+    "one": "Godkendte %n forslag",
+    "other": "Godkendte %n forslag"
+  },
   "Class %1": "Klasse %1",
   "Only PNG, JPEG and TIFF images can be counted.": "Kun PNG-, JPEG- og TIFF-billeder kan tælles.",
   "Could not read %1: %2": "Kunne ikke læse %1: %2",
@@ -110,5 +115,8 @@
   "Export Counts": "Eksportér optællinger",
   "The desktop file chooser (xdg-desktop-portal) is not available.": "Skrivebordets filvælger (xdg-desktop-portal) er ikke tilgængelig.",
   "Could not listen for the file chooser response.": "Kunne ikke lytte efter filvælgerens svar.",
-  "The file chooser failed: %1": "Filvælgeren fejlede: %1"
+  "The file chooser failed: %1": "Filvælgeren fejlede: %1",
+  "Exporting would overwrite the original image, so nothing was written.": "Eksporten ville overskrive originalbilledet, så intet blev skrevet.",
+  "%1 beside this image can't be read, so it was left as it is: %2. Fix it, or move it aside to start counting afresh.": "%1 ved siden af billedet kan ikke læses, så den blev ikke rørt: %2. Ret den, eller flyt den væk for at begynde forfra.",
+  "%1 belongs to %2, not this image, so it was left as it is. Move it aside to count this image.": "%1 hører til %2, ikke dette billede, så den blev ikke rørt. Flyt den væk for at tælle dette billede."
 }

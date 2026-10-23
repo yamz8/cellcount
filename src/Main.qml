@@ -348,15 +348,14 @@ ApplicationWindow {
                     opacity: 0
                     Behavior on opacity { NumberAnimation { duration: 200 } }
 
-                    Label { id: toastLabel; anchors.centerIn: parent; text: backend.status }
+                    Label { id: toastLabel; anchors.centerIn: parent }
                     Timer { id: toastTimer; interval: 2600; onTriggered: toast.opacity = 0 }
                     Connections {
                         target: backend
-                        function onMessageChanged() {
-                            if (backend.status !== "") {
-                                toast.opacity = 1
-                                toastTimer.restart()
-                            }
+                        function onStatusReported(message) {
+                            toastLabel.text = message
+                            toast.opacity = 1
+                            toastTimer.restart()
                         }
                     }
                 }

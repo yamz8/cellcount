@@ -3,6 +3,7 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QImageReader>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QSaveFile>
@@ -106,10 +107,33 @@ double Session::viability() const {
     return both == 0 ? notANumber : 100.0 * counts[liveClass] / both;
 }
 
+// Only the part of the ROI that lies on the image counts toward its area.
 double Session::areaPx() const {
-    if (roi.isSet())
+    const QRectF image(QPointF(0, 0), QSizeF(imageSize));
+    if (!roi.isSet())
+        return imageSize.isEmpty() ? 0 : image.width() * image.height();
+    if (imageSize.isEmpty() || image.contains(roi.rect))
         return roi.area();
-    return double(imageSize.width()) * imageSize.height();
+    if (roi.shape == "rect") {
+        const QRectF inside = roi.rect.intersected(image);
+        return inside.width() * inside.height();
+    }
+    // A circle over the edge: add up its horizontal chords, each clipped to
+    // the image, in thin strips.
+    const QPointF center = roi.rect.center();
+    const double radius = roi.rect.width() / 2;
+    const double top = std::max(0.0, center.y() - radius), bottom = std::min(image.height(), center.y() + radius);
+    const int strips = 4096;
+    const double height = (bottom - top) / strips;
+    double area = 0;
+    for (int i = 0; i < strips && bottom > top; ++i) {
+        const double dy = top + (i + 0.5) * height - center.y();
+        const double half = std::sqrt(std::max(0.0, radius * radius - dy * dy));
+        const double left = std::max(0.0, center.x() - half), right = std::min(image.width(), center.x() + half);
+        if (right > left)
+            area += (right - left) * height;
+    }
+    return area;
 }
 
 double Session::areaUm2() const { return pixelsPerUm > 0 ? areaPx() / (pixelsPerUm * pixelsPerUm) : notANumber; }
@@ -163,8 +187,18 @@ bool Session::fromJson(const QJsonObject &json, const QString &sessionDirectory,
         error("No image is named");
     else
         session.imagePath = QDir::cleanPath(QDir(sessionDirectory).absoluteFilePath(image));
+    // imageSize is optional, as a session written by hand or by an agent
+    // seldom has it; the image's own header says how big it is.
     const QJsonArray size = json.value("imageSize").toArray();
     session.imageSize = QSize(size.at(0).toInt(), size.at(1).toInt());
+    if (session.imageSize.isEmpty() && !session.imagePath.isEmpty()) {
+        QImageReader reader(session.imagePath);
+        reader.setAutoTransform(true);
+        QSize stored = reader.size();
+        if (reader.transformation() & QImageIOHandler::TransformationRotate90)
+            stored.transpose();
+        session.imageSize = stored.isEmpty() ? QSize() : stored;
+    }
 
     session.pixelsPerUm = json.value("pixelsPerUm").toDouble();
     if (session.pixelsPerUm < 0) {
@@ -234,7 +268,7 @@ bool Session::fromJson(const QJsonObject &json, const QString &sessionDirectory,
             error(QString("Marker %1 has class %2, which doesn't exist").arg(i + 1).arg(m.value("class").toVariant().toString()));
             continue;
         }
-        if (session.imageSize.isValid() &&
+        if (!session.imageSize.isEmpty() &&
             (marker.x < 0 || marker.y < 0 || marker.x > session.imageSize.width() || marker.y > session.imageSize.height()))
             ++outside;
         session.markers << marker;

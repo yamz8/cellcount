@@ -2,6 +2,7 @@
 
 #include <QDir>
 #include <QFileInfo>
+#include <QHash>
 #include <QSaveFile>
 #include <QtConcurrentRun>
 #include <cmath>
@@ -33,6 +34,10 @@ Backend::Backend(Theme *theme, FilePicker *filePicker, QObject *parent)
     m_detectDelay.setInterval(150);
     connect(&m_detectDelay, &QTimer::timeout, this, &Backend::detect);
     connect(&m_watcher, &QFutureWatcher<DetectResult>::finished, this, [this] {
+        if (!m_watcher.isFinished())
+            return;
+        // Settings changed, auto-suggest was turned off, or another image was
+        // opened while this ran: its blobs are stale.
         if (m_watcher.property("generation").toInt() != m_detectGeneration) {
             detect();
             return;
@@ -56,13 +61,16 @@ QColor Backend::accent() const { return QColor(m_theme ? m_theme->accent() : QSt
 QVariantList Backend::classes() const {
     QVariantList list;
     const auto counts = m_session.classCounts();
+    int total = 0;
+    for (int count : counts)
+        total += count;
     for (int i = 0; i < m_session.classes.size(); ++i) {
-        const double percent = m_session.percent(i);
+        const double percent = total ? 100.0 * counts[i] / total : -1.0;
         list << QVariantMap{{"name", m_session.classes[i].name},
                             {"shape", m_session.classes[i].shape},
                             {"color", classColor(accent(), i).name()},
                             {"count", counts[i]},
-                            {"percent", std::isnan(percent) ? -1.0 : percent}};
+                            {"percent", percent}};
     }
     return list;
 }
@@ -160,11 +168,30 @@ bool Backend::openPath(const QString &path) {
         }
         sessionPath = info.absoluteFilePath();
     } else {
-        // A session saved beside the image picks up where it left off.
+        // A session saved beside the image picks up where it left off. One
+        // that can't be read is reported and left alone, rather than replaced
+        // by a fresh session that the next save would write over it.
         const QString imagePath = info.absoluteFilePath();
         sessionPath = Session::sessionPathFor(imagePath);
-        if (!QFileInfo::exists(sessionPath) || !Session::load(sessionPath, &session, nullptr) ||
-            QFileInfo(session.imagePath) != info) {
+        if (QFileInfo::exists(sessionPath)) {
+            QList<Problem> problems;
+            if (!Session::load(sessionPath, &session, &problems)) {
+                QStringList errors;
+                for (const auto &problem : problems)
+                    if (problem.error)
+                        errors << problem.message;
+                fail(tr("%1 beside this image can't be read, so it was left as it is: %2. Fix it, or move it "
+                        "aside to start counting afresh.")
+                         .arg(QFileInfo(sessionPath).fileName(), errors.join("; ")));
+                return false;
+            }
+            if (QFileInfo(session.imagePath) != info) {
+                fail(tr("%1 belongs to %2, not this image, so it was left as it is. Move it aside to count "
+                        "this image.")
+                         .arg(QFileInfo(sessionPath).fileName(), session.imagePath));
+                return false;
+            }
+        } else {
             session = Session::withDefaults({tr("Live"), tr("Dead"), tr("Colony")});
             session.imagePath = imagePath;
         }
@@ -178,6 +205,7 @@ bool Backend::openPath(const QString &path) {
     }
 
     m_watcher.waitForFinished();
+    ++m_detectGeneration;
     m_image = image;
     session.imageSize = image.size();
     m_session = session;
@@ -229,23 +257,33 @@ bool Backend::exportTo(const QString &path, const QString &what) {
         return false;
     const QFileInfo target(path);
     const QString base = target.absoluteDir().filePath(target.completeBaseName());
+    // The file chooser suggests one name for every kind, so the extension
+    // follows the kind picked: a PNG never lands in a .csv file.
+    auto named = [&](const QString &suffix) {
+        return target.suffix().toLower() == suffix ? target.absoluteFilePath() : base + "." + suffix;
+    };
     QList<QPair<QString, QString>> outputs; // kind, path
     if (what == "all")
         outputs = {{"markers", base + "-markers.csv"}, {"summary", base + "-summary.csv"}, {"png", base + ".png"}};
-    else if (what == "markers" || what == "summary" || what == "png")
-        outputs = {{what, target.absoluteFilePath()}};
+    else if (what == "markers" || what == "summary")
+        outputs = {{what, named("csv")}};
+    else if (what == "png")
+        outputs = {{what, named("png")}};
     else {
         fail(tr("Unknown export \"%1\".").arg(what));
         return false;
     }
 
-    QStringList written;
-    for (const auto &[kind, output] : outputs) {
-        // The original image is never written to, even when asked to.
-        if (QFileInfo(output) == QFileInfo(m_session.imagePath)) {
-            fail(tr("Exporting would overwrite the original image, so nothing was written to it."));
+    // The original image is never written to, even when asked to, and the
+    // check comes first so a refused export leaves nothing half written.
+    for (const auto &output : outputs)
+        if (QFileInfo(output.second) == QFileInfo(m_session.imagePath)) {
+            fail(tr("Exporting would overwrite the original image, so nothing was written."));
             return false;
         }
+
+    QStringList written;
+    for (const auto &[kind, output] : outputs) {
         QString error;
         bool ok;
         if (kind == "png") {
@@ -335,6 +373,8 @@ void Backend::setRoi(const QString &shape, double x, double y, double width, dou
         const double radius = std::hypot(width, height);
         rect = QRectF(x - radius, y - radius, radius * 2, radius * 2);
     }
+    if (shape == "rect")
+        rect = rect.intersected(QRectF(QPointF(0, 0), QSizeF(m_image.size())));
     if (rect.width() < 2 || rect.height() < 2)
         return;
     remember();
@@ -445,11 +485,14 @@ void Backend::removeClass(int index) {
     shift(m_session.deadClass);
     if (m_session.liveClass < 0 || m_session.deadClass < 0)
         m_session.liveClass = m_session.deadClass = -1;
+    if (m_currentClass > index)
+        --m_currentClass;
     m_currentClass = std::min(m_currentClass, int(m_session.classes.size()) - 1);
     touch();
 }
 
 void Backend::undo() {
+    endMove();
     if (m_undo.isEmpty())
         return;
     m_redo << m_session;
@@ -459,6 +502,7 @@ void Backend::undo() {
 }
 
 void Backend::redo() {
+    endMove();
     if (m_redo.isEmpty())
         return;
     m_undo << m_session;
@@ -475,6 +519,7 @@ void Backend::clearError() {
 }
 
 void Backend::remember() {
+    endMove();
     m_undo << m_session;
     if (m_undo.size() > undoLimit)
         m_undo.removeFirst();
@@ -494,6 +539,7 @@ void Backend::fail(const QString &message) {
 void Backend::report(const QString &message) {
     m_status = message;
     emit messageChanged();
+    emit statusReported(message);
 }
 
 void Backend::setAutoSuggest(bool on) {
@@ -504,6 +550,7 @@ void Backend::setAutoSuggest(bool on) {
         detect();
         return;
     }
+    ++m_detectGeneration;
     m_blobs.clear();
     m_rejected.clear();
     m_suggestions.clear();
@@ -558,21 +605,39 @@ void Backend::detect() {
 }
 
 // Suggestions hide once a marker sits on them, outside the ROI, or when rejected.
+// This runs on every pointer step of a drag, so markers go into a grid as wide
+// as the largest blob's radius, and each blob looks only at its neighbouring cells.
 void Backend::refilterSuggestions() {
     QList<int> visible;
-    for (int i = 0; i < m_blobs.size(); ++i) {
-        const Blob &blob = m_blobs[i];
-        if (m_rejected.contains(i) || !m_session.roi.contains({blob.x, blob.y}))
-            continue;
-        const double radius = std::max(4.0, std::sqrt(blob.area / M_PI));
-        bool covered = false;
-        for (const auto &marker : m_session.markers)
-            if (distanceSquared(marker.x, marker.y, blob.x, blob.y) <= radius * radius) {
-                covered = true;
-                break;
-            }
-        if (!covered)
-            visible << i;
+    if (!m_blobs.isEmpty()) {
+        double cell = 8;
+        for (const Blob &blob : m_blobs)
+            cell = std::max(cell, std::sqrt(blob.area / M_PI));
+        auto key = [cell](double x, double y) {
+            return (qint64(std::floor(x / cell)) << 32) ^ quint32(qint32(std::floor(y / cell)));
+        };
+        QHash<qint64, QList<int>> grid;
+        for (int i = 0; i < m_session.markers.size(); ++i)
+            grid[key(m_session.markers[i].x, m_session.markers[i].y)] << i;
+
+        for (int i = 0; i < m_blobs.size(); ++i) {
+            const Blob &blob = m_blobs[i];
+            if (m_rejected.contains(i) || !m_session.roi.contains({blob.x, blob.y}))
+                continue;
+            const double radius = std::max(4.0, std::sqrt(blob.area / M_PI));
+            bool covered = false;
+            for (int dy = -1; dy <= 1 && !covered; ++dy)
+                for (int dx = -1; dx <= 1 && !covered; ++dx)
+                    for (int index : grid.value(key(blob.x + dx * cell, blob.y + dy * cell))) {
+                        const Marker &marker = m_session.markers[index];
+                        if (distanceSquared(marker.x, marker.y, blob.x, blob.y) <= radius * radius) {
+                            covered = true;
+                            break;
+                        }
+                    }
+            if (!covered)
+                visible << i;
+        }
     }
     m_suggestions = visible;
     emit suggestionsChanged();

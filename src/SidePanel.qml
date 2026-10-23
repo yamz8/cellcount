@@ -93,12 +93,14 @@ Rectangle {
 
             SectionLabel { text: qsTr("Classes") }
 
+            // The model is the number of classes, so rows are only rebuilt when
+            // one is added or removed, not on every count change.
             Repeater {
-                model: backend.classes
+                model: backend.classes.length
                 delegate: Rectangle {
                     id: row
-                    required property var modelData
                     required property int index
+                    readonly property var modelData: backend.classes[index] || ({})
                     readonly property bool current: index === backend.currentClass
                     Layout.fillWidth: true
                     implicitHeight: 40
